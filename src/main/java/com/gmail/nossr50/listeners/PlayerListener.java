@@ -524,7 +524,7 @@ public class PlayerListener implements Listener {
         McMMOPlayer mcMMOPlayer = UserManager.getPlayer(player);
         //There's an issue with using Async saves on player quit
         //Basically there are conditions in which an async task does not execute fast enough to save the data if the server shutdown shortly after this task was scheduled
-        mcMMOPlayer.logout(true);
+        mcMMOPlayer.logout(false); // Firestarter :: save async as we take precautions to prevent issues related to async saves
     }
 
     /**
