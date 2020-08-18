@@ -188,7 +188,7 @@ public final class CombatUtils {
 
         //Only execute bonuses if the player is not spamming
         if (unarmedManager.canUseIronArm()) {
-            finalDamage+=(unarmedManager.calculateIronArmDamage() * mcMMOPlayer.getAttackStrength());
+            finalDamage+=(unarmedManager.calculateSteelArmStyleDamage() * mcMMOPlayer.getAttackStrength());
         }
 
         if (unarmedManager.canUseBerserk()) {
@@ -980,6 +980,8 @@ public final class CombatUtils {
         }
         else if (ItemUtils.isDiamondTool(inHand)) {
             tier = 4;
+        } else if (ItemUtils.isNetheriteTool(inHand)) {
+            tier = 5;
         }
         else if (mcMMO.getModManager().isCustomTool(inHand)) {
             tier = mcMMO.getModManager().getTool(inHand).getTier();
