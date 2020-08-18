@@ -1,16 +1,20 @@
 package com.gmail.nossr50.config;
 
 import com.gmail.nossr50.mcMMO;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Blacklist certain features in certain worlds
  */
 public class WorldBlacklist {
-    private static ArrayList<String> blacklist;
+    private static Set<UUID> blacklist; // Firestarter :: faster blacklist
     private final mcMMO plugin;
 
     private final String blackListFileName = "world_blacklist.txt";
@@ -18,7 +22,7 @@ public class WorldBlacklist {
     public WorldBlacklist(mcMMO plugin)
     {
         this.plugin = plugin;
-        blacklist = new ArrayList<>();
+        blacklist = new HashSet<>(); // Firestarter :: faster blacklist
         init();
     }
 
@@ -53,8 +57,17 @@ public class WorldBlacklist {
                 if(currentLine.length() == 0)
                     continue;
 
-                if(!blacklist.contains(currentLine))
-                    blacklist.add(currentLine);
+                // Firestarter start :: faster blacklist
+                World world = Bukkit.getWorld(currentLine);
+
+                if (world == null) {
+                    continue;
+                }
+
+                if (!blacklist.contains(world.getUID())) {
+                    blacklist.add(world.getUID());
+                }
+                // Firestarter end
             }
 
 
@@ -81,13 +94,6 @@ public class WorldBlacklist {
 
     public static boolean isWorldBlacklisted(World world)
     {
-
-        for(String s : blacklist)
-        {
-            if(world.getName().equalsIgnoreCase(s))
-                return true;
-        }
-
-        return false;
+        return blacklist.contains(world.getUID()); // Firestarter :: faster blacklist
     }
 }
