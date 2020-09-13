@@ -654,7 +654,7 @@ public class PlayerListener implements Listener {
 
                                 // Make sure the player knows what he's doing when trying to salvage an enchanted item
                                 if (salvageManager.checkConfirmation(true)) {
-                                    SkillUtils.handleAbilitySpeedDecrease(player);
+                                    SkillUtils.removeAbilityBoostsFromInventory(player);
                                     salvageManager.handleSalvage(clickedBlock.getLocation(), heldItem);
                                     player.updateInventory();
                                 }
@@ -804,7 +804,8 @@ public class PlayerListener implements Listener {
                 FakePlayerAnimationEvent fakeSwing = new FakePlayerAnimationEvent(event.getPlayer()); //PlayerAnimationEvent compat        
                 if (herbalismManager.canGreenThumbBlock(blockState)) {
                     Bukkit.getPluginManager().callEvent(fakeSwing);
-                    player.getInventory().setItemInMainHand(new ItemStack(Material.WHEAT_SEEDS, heldItem.getAmount() - 1));
+                    player.getInventory().getItemInMainHand().setAmount(heldItem.getAmount() - 1);
+                    player.updateInventory();
                     if (herbalismManager.processGreenThumbBlocks(blockState) && EventUtils.simulateBlockBreak(block, player, false)) {
                         blockState.update(true);
                     }

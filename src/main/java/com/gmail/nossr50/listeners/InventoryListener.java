@@ -72,7 +72,22 @@ public class InventoryListener implements Listener {
                     return;
                 }
 
+
+                boolean debugMode = player.isOnline() && UserManager.getPlayer(player).isDebugMode();
+
+                if(debugMode) {
+                    player.sendMessage("FURNACE FUEL EFFICIENCY DEBUG REPORT");
+                    player.sendMessage("Furnace - "+furnace.hashCode());
+                    player.sendMessage("Furnace Type: "+furnaceBlock.getType().toString());
+                    player.sendMessage("Burn Length before Fuel Efficiency is applied - "+event.getBurnTime());
+                }
+
                 event.setBurnTime(UserManager.getPlayer(player).getSmeltingManager().fuelEfficiency(event.getBurnTime()));
+
+                if(debugMode) {
+                    player.sendMessage("New Furnace Burn Length (after applying fuel efficiency) "+event.getBurnTime());
+                    player.sendMessage("");
+                }
             }
         }
 
@@ -383,6 +398,10 @@ public class InventoryListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onInventoryClickEvent(InventoryClickEvent event) {
+        if(event.getCurrentItem() == null) {
+            return;
+        }
+
         SkillUtils.removeAbilityBuff(event.getCurrentItem());
         if (event.getAction() == InventoryAction.HOTBAR_SWAP) {
             if(isOutsideWindowClick(event))
@@ -391,7 +410,7 @@ public class InventoryListener implements Listener {
             PlayerInventory playerInventory = event.getWhoClicked().getInventory();
 
             if(playerInventory.getItem(event.getHotbarButton()) != null)
-                SkillUtils.removeAbilityBuff(event.getWhoClicked().getInventory().getItem(event.getHotbarButton()));
+                SkillUtils.removeAbilityBuff(playerInventory.getItem(event.getHotbarButton()));
         }
     }
 
@@ -414,6 +433,7 @@ public class InventoryListener implements Listener {
 
         ItemStack result = event.getRecipe().getResult();
 
+        //TODO: what is the point of this
         if (!ItemUtils.isMcMMOItem(result)) {
             return;
         }
