@@ -11,7 +11,6 @@ import com.gmail.nossr50.listeners.InteractionManager;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.util.skills.RankUtils;
-import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.MessageType;
 import net.kyori.adventure.text.Component;
@@ -22,12 +21,11 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.md_5.bungee.api.ChatMessageType;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This class handles many of the JSON components that mcMMO makes and uses
@@ -78,7 +76,7 @@ public class TextComponentFactory {
 
         wikiLinkComponent.hoverEvent(HoverEvent.showText(componentBuilder.build()));
 
-        mcMMO.getAudiences().audience(player).sendMessage(wikiLinkComponent, MessageType.SYSTEM);
+        mcMMO.getAudiences().player(player).sendMessage(wikiLinkComponent, MessageType.SYSTEM);
     }
 
     public static void sendPlayerUrlHeader(Player player) {
@@ -89,7 +87,7 @@ public class TextComponentFactory {
 
         TextComponent emptySpace = TextComponent.space();
 
-        mcMMO.getAudiences().audience(player).sendMessage(TextComponent.ofChildren(
+        mcMMO.getAudiences().player(player).sendMessage(TextComponent.ofChildren(
           prefix,
           getWebLinkTextComponent(McMMOWebLinks.WEBSITE),
           emptySpace,
@@ -113,7 +111,7 @@ public class TextComponentFactory {
         AtomicReference<Component> messageToSend = new AtomicReference<>();
         int newLineCount = 0; //Hacky solution to wordwrap problems
 
-        final Audience audience = mcMMO.getAudiences().audience(player);
+        final Audience audience = mcMMO.getAudiences().player(player);
         for (Component textComponent : textComponents) {
             //Don't send more than 3 subskills per line to avoid MOST wordwrap problems
             if(newLineCount > 2)

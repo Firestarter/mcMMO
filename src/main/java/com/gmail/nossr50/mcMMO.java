@@ -81,6 +81,7 @@ public class mcMMO extends JavaPlugin {
     private static MaterialMapStore materialMapStore;
     private static PlayerLevelUtils playerLevelUtils;
     private static SmeltingTracker smeltingTracker;
+    private static TransientMetadataTools transientMetadataTools;
 
     /* Adventure */
     private static BukkitAudiences audiences;
@@ -102,6 +103,7 @@ public class mcMMO extends JavaPlugin {
 
     /* Plugin Checks */
     private static boolean healthBarPluginEnabled;
+    private static boolean projectKorraEnabled;
 
     // API checks
     private static boolean serverAPIOutdated = false;
@@ -119,11 +121,9 @@ public class mcMMO extends JavaPlugin {
     public static final String FISH_HOOK_REF_METAKEY = "mcMMO: Fish Hook Tracker";
     public static final String DODGE_TRACKER        = "mcMMO: Dodge Tracker";
     public static final String CUSTOM_DAMAGE_METAKEY = "mcMMO: Custom Damage";
-    public static final String COTW_TEMPORARY_SUMMON = "mcMMO: COTW Entity";
-    public final static String entityMetadataKey   = "mcMMO: Spawned Entity";
+    public final static String travelingBlock      = "mcMMO: Traveling Block";
     public final static String blockMetadataKey    = "mcMMO: Piston Tracking";
     public final static String tntMetadataKey      = "mcMMO: Tracked TNT";
-    public final static String funfettiMetadataKey = "mcMMO: Funfetti";
     public final static String customNameKey       = "mcMMO: Custom Name";
     public final static String customVisibleKey    = "mcMMO: Name Visibility";
     public final static String droppedItemKey      = "mcMMO: Tracked Item";
@@ -132,12 +132,9 @@ public class mcMMO extends JavaPlugin {
     public final static String bowForceKey         = "mcMMO: Bow Force";
     public final static String arrowDistanceKey    = "mcMMO: Arrow Distance";
     public final static String BONUS_DROPS_METAKEY = "mcMMO: Double Drops";
-    //public final static String customDamageKey     = "mcMMO: Custom Damage";
     public final static String disarmedItemKey     = "mcMMO: Disarmed Item";
     public final static String playerDataKey       = "mcMMO: Player Data";
-    public final static String greenThumbDataKey   = "mcMMO: Green Thumb";
     public final static String databaseCommandKey  = "mcMMO: Processing Database Command";
-    public final static String bredMetadataKey     = "mcMMO: Bred Animal";
 
     public static FixedMetadataValue metadataValue;
 
@@ -159,6 +156,7 @@ public class mcMMO extends JavaPlugin {
 
             PluginManager pluginManager = getServer().getPluginManager();
             healthBarPluginEnabled = pluginManager.getPlugin("HealthBar") != null;
+            projectKorraEnabled = pluginManager.getPlugin("ProjectKorra") != null;
 
             upgradeManager = new UpgradeManager();
 
@@ -180,6 +178,10 @@ public class mcMMO extends JavaPlugin {
 
             if (getServer().getName().equals("Cauldron") || getServer().getName().equals("MCPC+")) {
                 checkModConfigs();
+            }
+
+            if(projectKorraEnabled) {
+                getLogger().info("ProjectKorra was detected, this can cause some issues with weakness potions and combat skills for mcMMO");
             }
 
             if (healthBarPluginEnabled) {
@@ -276,6 +278,8 @@ public class mcMMO extends JavaPlugin {
         smeltingTracker = new SmeltingTracker();
 
         audiences = BukkitAudiences.create(this);
+
+        transientMetadataTools = new TransientMetadataTools(this);
     }
 
     public static PlayerLevelUtils getPlayerLevelUtils() {
@@ -688,5 +692,13 @@ public class mcMMO extends JavaPlugin {
 
     public static BukkitAudiences getAudiences() {
         return audiences;
+    }
+
+    public static boolean isProjectKorraEnabled() {
+        return projectKorraEnabled;
+    }
+
+    public static TransientMetadataTools getTransientMetadataTools() {
+        return transientMetadataTools;
     }
 }
