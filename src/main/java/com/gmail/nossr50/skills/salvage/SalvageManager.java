@@ -27,7 +27,9 @@ import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Map;
 import java.util.Map.Entry;
@@ -65,8 +67,9 @@ public class SalvageManager extends SkillManager {
         Player player = getPlayer();
 
         Salvageable salvageable = mcMMO.getSalvageableManager().getSalvageable(item.getType());
-
-        if (item.getItemMeta() != null && item.getItemMeta().isUnbreakable()) {
+        ItemMeta meta = item.getItemMeta();
+        
+        if (meta != null && meta.isUnbreakable()) {
             NotificationManager.sendPlayerInformation(player, NotificationType.SUBSKILL_MESSAGE_FAILED, "Anvil.Unbreakable");
             return;
         }
@@ -91,7 +94,8 @@ public class SalvageManager extends SkillManager {
             return;
         }
 
-        int potentialSalvageYield = Salvage.calculateSalvageableAmount(item.getDurability(), salvageable.getMaximumDurability(), salvageable.getMaximumQuantity());
+        int durability = meta instanceof Damageable ? ((Damageable) meta).getDamage(): 0;
+        int potentialSalvageYield = Salvage.calculateSalvageableAmount(durability, salvageable.getMaximumDurability(), salvageable.getMaximumQuantity());
 
         if (potentialSalvageYield <= 0) {
             NotificationManager.sendPlayerInformation(player, NotificationType.SUBSKILL_MESSAGE_FAILED, "Salvage.Skills.TooDamaged");
