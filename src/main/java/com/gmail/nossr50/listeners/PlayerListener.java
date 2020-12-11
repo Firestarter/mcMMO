@@ -362,7 +362,11 @@ public class PlayerListener implements Listener {
         FishingManager fishingManager = UserManager.getPlayer(player).getFishingManager();
 
         //Track the hook
+        /* // Firestarter start :: always detect fishing rod spam
         if(ExperienceConfig.getInstance().isFishingExploitingPrevented())
+         */
+        if (true)
+        // Firestarter end
         {
             if(event.getHook().getMetadata(mcMMO.FISH_HOOK_REF_METAKEY).size() == 0)
             {
@@ -738,8 +742,12 @@ public class PlayerListener implements Listener {
         //Spam Fishing Detection
         if(event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR)
         {
+            /* // Firestarter start :: always detect fishing rod spam
             if(ExperienceConfig.getInstance().isFishingExploitingPrevented()
                        && (heldItem.getType() == Material.FISHING_ROD || player.getInventory().getItemInOffHand().getType() == Material.FISHING_ROD))
+             */
+            if (true)
+            // Firestarter end
             {
                 if(player.isInsideVehicle() && (player.getVehicle() instanceof Minecart || player.getVehicle() instanceof PoweredMinecart))
                 {
