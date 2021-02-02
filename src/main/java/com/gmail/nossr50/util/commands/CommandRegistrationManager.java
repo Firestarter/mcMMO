@@ -22,7 +22,7 @@ import com.gmail.nossr50.config.Config;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
-import com.gmail.nossr50.util.StringUtils;
+import com.gmail.nossr50.util.text.StringUtils;
 import org.bukkit.command.PluginCommand;
 
 import java.util.ArrayList;
@@ -141,6 +141,15 @@ public final class CommandRegistrationManager {
         command.setUsage(LocaleLoader.getString("Commands.Usage.1", "mcgod", "[" + LocaleLoader.getString("Commands.Usage.Player") + "]"));
         command.setExecutor(new McgodCommand());
     }
+
+//    private static void registerDropTreasureCommand() {
+//        PluginCommand command = mcMMO.p.getCommand("mmodroptreasures");
+//        command.setDescription(LocaleLoader.getString("Commands.Description.droptreasures"));
+//        command.setPermission("mcmmo.commands.droptreasures");
+//        command.setPermissionMessage(permissionsMessage);
+//        command.setUsage(LocaleLoader.getString("Commands.Usage.0", "mcgod"));
+//        command.setExecutor(new DropTreasureCommand());
+//    }
 
     private static void registerMmoInfoCommand() {
         PluginCommand command = mcMMO.p.getCommand("mmoinfo");

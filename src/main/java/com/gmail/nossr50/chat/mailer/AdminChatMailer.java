@@ -3,12 +3,13 @@ package com.gmail.nossr50.chat.mailer;
 import com.gmail.nossr50.chat.author.Author;
 import com.gmail.nossr50.chat.message.AdminChatMessage;
 import com.gmail.nossr50.chat.message.ChatMessage;
+import com.gmail.nossr50.datatypes.chat.ChatChannel;
 import com.gmail.nossr50.events.chat.McMMOAdminChatEvent;
 import com.gmail.nossr50.events.chat.McMMOChatEvent;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
+import com.gmail.nossr50.util.text.TextUtils;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -28,6 +29,7 @@ public class AdminChatMailer extends AbstractChatMailer {
 
     /**
      * Constructs an audience of admins
+     *
      * @return an audience of admins
      */
     public @NotNull Audience constructAudience() {
@@ -36,6 +38,7 @@ public class AdminChatMailer extends AbstractChatMailer {
 
     /**
      * Predicate used to filter the audience
+     *
      * @return admin chat audience predicate
      */
     public @NotNull Predicate<CommandSender> predicate() {
@@ -46,6 +49,7 @@ public class AdminChatMailer extends AbstractChatMailer {
 
     /**
      * Styles a string using a locale entry
+     *
      * @param author message author
      * @param message message contents
      * @param canColor whether to replace colors codes with colors in the raw message
@@ -53,9 +57,9 @@ public class AdminChatMailer extends AbstractChatMailer {
      */
     public @NotNull TextComponent addStyle(@NotNull Author author, @NotNull String message, boolean canColor) {
         if(canColor) {
-            return Component.text(LocaleLoader.getString("Chat.Style.Admin", author.getAuthoredName(), LocaleLoader.addColors(message)));
+            return LocaleLoader.getTextComponent("Chat.Style.Admin", author.getAuthoredName(ChatChannel.ADMIN), message);
         } else {
-            return Component.text(LocaleLoader.getString("Chat.Style.Admin", author.getAuthoredName(), message));
+            return TextUtils.ofLegacyTextRaw(LocaleLoader.getString("Chat.Style.Admin", author.getAuthoredName(ChatChannel.ADMIN), message));
         }
     }
 
@@ -64,6 +68,14 @@ public class AdminChatMailer extends AbstractChatMailer {
         chatMessage.sendMessage();
     }
 
+    /**
+     * Processes a chat message from an author to an audience of admins
+     *
+     * @param author the author
+     * @param rawString the raw message as the author typed it before any styling
+     * @param isAsync whether or not this is being processed asynchronously
+     * @param canColor whether or not the author can use colors in chat
+     */
     public void processChatMessage(@NotNull Author author, @NotNull String rawString, boolean isAsync, boolean canColor) {
         AdminChatMessage chatMessage = new AdminChatMessage(pluginRef, author, constructAudience(), rawString, addStyle(author, rawString, canColor));
 
@@ -74,4 +86,6 @@ public class AdminChatMailer extends AbstractChatMailer {
             sendMail(chatMessage);
         }
     }
+
+
 }

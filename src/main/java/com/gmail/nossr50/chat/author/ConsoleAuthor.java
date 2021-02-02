@@ -1,5 +1,7 @@
 package com.gmail.nossr50.chat.author;
 
+import com.gmail.nossr50.datatypes.chat.ChatChannel;
+import com.gmail.nossr50.util.text.TextUtils;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,12 +12,13 @@ public class ConsoleAuthor implements Author {
     private final @NotNull String name;
 
     public ConsoleAuthor(@NotNull String name) {
-        this.name = name;
         this.uuid = new UUID(0, 0);
+        this.name = TextUtils.sanitizeForSerializer(name);
     }
 
+    //TODO: Think of a less clunky solution later
     @Override
-    public @NotNull String getAuthoredName() {
+    public @NotNull String getAuthoredName(@NotNull ChatChannel chatChannel) {
         return name;
     }
 

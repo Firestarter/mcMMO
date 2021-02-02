@@ -11,6 +11,7 @@ import com.gmail.nossr50.config.mods.ToolConfigManager;
 import com.gmail.nossr50.config.skills.alchemy.PotionConfig;
 import com.gmail.nossr50.config.skills.repair.RepairConfigManager;
 import com.gmail.nossr50.config.skills.salvage.SalvageConfigManager;
+import com.gmail.nossr50.config.treasure.FishingTreasureConfig;
 import com.gmail.nossr50.config.treasure.TreasureConfig;
 import com.gmail.nossr50.database.DatabaseManager;
 import com.gmail.nossr50.database.DatabaseManagerFactory;
@@ -37,8 +38,8 @@ import com.gmail.nossr50.skills.salvage.salvageables.Salvageable;
 import com.gmail.nossr50.skills.salvage.salvageables.SalvageableManager;
 import com.gmail.nossr50.skills.salvage.salvageables.SimpleSalvageableManager;
 import com.gmail.nossr50.util.*;
-import com.gmail.nossr50.util.blockmeta.chunkmeta.ChunkManager;
-import com.gmail.nossr50.util.blockmeta.chunkmeta.ChunkManagerFactory;
+import com.gmail.nossr50.util.blockmeta.ChunkManager;
+import com.gmail.nossr50.util.blockmeta.ChunkManagerFactory;
 import com.gmail.nossr50.util.commands.CommandRegistrationManager;
 import com.gmail.nossr50.util.compat.CompatibilityManager;
 import com.gmail.nossr50.util.experience.FormulaManager;
@@ -86,6 +87,8 @@ public class mcMMO extends JavaPlugin {
     private static TransientMetadataTools transientMetadataTools;
     private static ChatManager chatManager;
     private static CommandManager commandManager; //ACF
+    private static TransientEntityTracker transientEntityTracker;
+    private static boolean serverShutdownExecuted = false;
 
     /* Adventure */
     private static BukkitAudiences audiences;
@@ -250,13 +253,13 @@ public class mcMMO extends JavaPlugin {
             Metrics metrics;
 
             if(Config.getInstance().getIsMetricsEnabled()) {
-                metrics = new Metrics(this);
+                metrics = new Metrics(this, 3894);
                 metrics.addCustomChart(new Metrics.SimplePie("version", () -> getDescription().getVersion()));
 
                 if(Config.getInstance().getIsRetroMode())
-                    metrics.addCustomChart(new Metrics.SimplePie("scaling", () -> "Standard"));
+                    metrics.addCustomChart(new Metrics.SimplePie("leveling_system", () -> "Retro"));
                 else
-                    metrics.addCustomChart(new Metrics.SimplePie("scaling", () -> "Retro"));
+                    metrics.addCustomChart(new Metrics.SimplePie("leveling_system", () -> "Standard"));
             }
         }
         catch (Throwable t) {
@@ -288,6 +291,9 @@ public class mcMMO extends JavaPlugin {
         chatManager = new ChatManager(this);
 
         commandManager = new CommandManager(this);
+
+        transientEntityTracker = new TransientEntityTracker();
+        setServerShutdown(false); //Reset flag, used to make decisions about async saves
     }
 
     public static PlayerLevelUtils getPlayerLevelUtils() {
@@ -323,6 +329,10 @@ public class mcMMO extends JavaPlugin {
      */
     @Override
     public void onDisable() {
+        setServerShutdown(true);
+        //TODO: Write code to catch unfinished async save tasks, for now we just hope they finish in time, which they should in most cases
+        mcMMO.p.getLogger().info("Server shutdown has been executed, saving and cleaning up data...");
+
         try {
             UserManager.saveAll();      // Make sure to save player information if the server shuts down
             UserManager.clearAll();
@@ -335,16 +345,10 @@ public class mcMMO extends JavaPlugin {
 
             formulaManager.saveFormula();
             holidayManager.saveAnniversaryFiles();
-            placeStore.saveAll();       // Save our metadata
-            placeStore.cleanUp();       // Cleanup empty metadata stores
+            placeStore.closeAll();
         }
 
         catch (Exception e) { e.printStackTrace(); }
-
-        debug("Canceling all tasks...");
-        getServer().getScheduler().cancelTasks(this); // This removes our tasks
-        debug("Unregister all events...");
-        HandlerList.unregisterAll(this); // Cancel event registrations
 
         if (Config.getInstance().getBackupsEnabled()) {
             // Remove other tasks BEFORE starting the Backup, or we just cancel it straight away.
@@ -364,6 +368,11 @@ public class mcMMO extends JavaPlugin {
                 }
             }
         }
+
+        debug("Canceling all tasks...");
+        getServer().getScheduler().cancelTasks(this); // This removes our tasks
+        debug("Unregister all events...");
+        HandlerList.unregisterAll(this); // Cancel event registrations
 
         databaseManager.onDisable();
         debug("Was disabled."); // How informative!
@@ -517,6 +526,7 @@ public class mcMMO extends JavaPlugin {
     private void loadConfigFiles() {
         // Force the loading of config files
         TreasureConfig.getInstance();
+        FishingTreasureConfig.getInstance();
         HiddenConfig.getInstance();
         AdvancedConfig.getInstance();
         PotionConfig.getInstance();
@@ -567,6 +577,7 @@ public class mcMMO extends JavaPlugin {
         pluginManager.registerEvents(new InventoryListener(this), this);
         pluginManager.registerEvents(new SelfListener(this), this);
         pluginManager.registerEvents(new WorldListener(this), this);
+        pluginManager.registerEvents(new ChunkListener(), this);
 //        pluginManager.registerEvents(new CommandListener(this), this);
     }
 
@@ -717,4 +728,17 @@ public class mcMMO extends JavaPlugin {
     public CommandManager getCommandManager() {
         return commandManager;
     }
+
+    public static TransientEntityTracker getTransientEntityTracker() {
+        return transientEntityTracker;
+    }
+
+    public static synchronized boolean isServerShutdownExecuted() {
+        return serverShutdownExecuted;
+    }
+
+    private static synchronized void setServerShutdown(boolean bool) {
+        serverShutdownExecuted = bool;
+    }
+
 }

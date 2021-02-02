@@ -19,6 +19,9 @@ load: POSTWORLD
 api-version: 1.13
 
 commands:
+#    mmodroptreasures:
+#        description: An admin command used to spawn treasure drops
+#        permission: mcmmo.commands.droptreasures
     mmoxpbar:
         aliases: xpbarsettings
         description: Change XP bar settings
@@ -182,6 +185,25 @@ commands:
         description: Reloads locale
         permission: mcmmo.commands.reloadlocale
 permissions:
+    #mcmmo.defaults is the intended default permission, give this to your players for the intended experience
+    mcmmo.defaults:
+        default: true
+        description: mcmmo permisions that default to true
+        children:
+            mcmmo.chat.partychat: true
+            mcmmo.commands.defaults: true
+            mcmmo.motd: true
+            mcmmo.skills.all: true
+            mcmmo.chat.colors: true
+            mcmmo.broadcast.levelup: true
+    mcmmo.defaultsop:
+        default: op
+        description: mcmmo permissions that default to op
+        children:
+            mcmmo.chat.adminchat: true
+            mcmmo.commands.defaultsop: true
+            mcmmo.item.all: true
+            mcmmo.tools.all: true
     mcmmo.*:
         default: false
         description: Implies all mcmmo permissions.
@@ -198,6 +220,8 @@ permissions:
             mcmmo.defaultsop: true
             mcmmo.party.all: true
             mcmmo.perks.all: true
+    mcmmo.broadcast.levelup:
+        description: when the player reaches certain level milestones their achievement will be broadcast in chat to other plays
     mcmmo.ability.*:
         default: false
         description: Implies all mcmmo.ability permissions.
@@ -695,8 +719,11 @@ permissions:
             mcmmo.ability.woodcutting.splinter: true
             mcmmo.ability.woodcutting.barksurgeon: true
             mcmmo.ability.woodcutting.naturesbounty: true
+            mcmmo.ability.woodcutting.knockonwood: true
             mcmmo.ability.woodcutting.leafblower: true
             mcmmo.ability.woodcutting.treefeller: true
+    mcmmo.ability.woodcutting.knockonwood:
+        description: Allows access to Knock on Wood subskill
     mcmmo.ability.woodcutting.splinter:
         description: Allows access to Splinter
     mcmmo.ability.woodcutting.barksurgeon:
@@ -1292,23 +1319,6 @@ permissions:
         description: Allows access to the xprate reset command
     mcmmo.commands.xprate.set:
         description: Allows access to the xprate command to control xp events
-    mcmmo.defaults:
-        default: true
-        description: mcmmo permisions that default to true
-        children:
-            mcmmo.chat.partychat: true
-            mcmmo.commands.defaults: true
-            mcmmo.motd: true 
-            mcmmo.skills.all: true
-            mcmmo.chat.colors: true
-    mcmmo.defaultsop:
-        default: op
-        description: mcmmo permissions that default to op
-        children:
-            mcmmo.chat.adminchat: true
-            mcmmo.commands.defaultsop: true
-            mcmmo.item.all: true
-            mcmmo.tools.all: true
     mcmmo.item.*:
         default: true
         description: Implies all mcmmo.item permissions

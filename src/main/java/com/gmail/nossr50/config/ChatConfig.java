@@ -1,7 +1,7 @@
 package com.gmail.nossr50.config;
 
 import com.gmail.nossr50.datatypes.chat.ChatChannel;
-import com.gmail.nossr50.util.StringUtils;
+import com.gmail.nossr50.util.text.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class ChatConfig extends AutoUpdateConfigLoader {
@@ -35,7 +35,7 @@ public class ChatConfig extends AutoUpdateConfigLoader {
     }
 
     public boolean isChatChannelEnabled(@NotNull ChatChannel chatChannel) {
-        String key = "Chat.Channels." + StringUtils.getCapitalized(chatChannel.toString()) + ".Enabled";
+        String key = "Chat.Channels." + StringUtils.getCapitalized(chatChannel.toString()) + ".Enable";
         return config.getBoolean(key, true);
     }
 

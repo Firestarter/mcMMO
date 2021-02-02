@@ -1,7 +1,6 @@
 package com.gmail.nossr50.datatypes.player;
 
-import com.gmail.nossr50.chat.author.AdminAuthor;
-import com.gmail.nossr50.chat.author.PartyAuthor;
+import com.gmail.nossr50.chat.author.PlayerAuthor;
 import com.gmail.nossr50.config.AdvancedConfig;
 import com.gmail.nossr50.config.ChatConfig;
 import com.gmail.nossr50.config.Config;
@@ -15,8 +14,10 @@ import com.gmail.nossr50.datatypes.mods.CustomTool;
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.datatypes.party.PartyTeleportRecord;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
+import com.gmail.nossr50.datatypes.skills.SubSkillType;
 import com.gmail.nossr50.datatypes.skills.SuperAbilityType;
 import com.gmail.nossr50.datatypes.skills.ToolType;
+import com.gmail.nossr50.events.experience.McMMOPlayerPreXpGainEvent;
 import com.gmail.nossr50.locale.LocaleLoader;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.party.PartyManager;
@@ -41,6 +42,7 @@ import com.gmail.nossr50.skills.swords.SwordsManager;
 import com.gmail.nossr50.skills.taming.TamingManager;
 import com.gmail.nossr50.skills.unarmed.UnarmedManager;
 import com.gmail.nossr50.skills.woodcutting.WoodcuttingManager;
+import com.gmail.nossr50.util.BlockUtils;
 import com.gmail.nossr50.util.EventUtils;
 import com.gmail.nossr50.util.Misc;
 import com.gmail.nossr50.util.Permissions;
@@ -55,9 +57,10 @@ import com.gmail.nossr50.util.sounds.SoundManager;
 import com.gmail.nossr50.util.sounds.SoundType;
 import net.kyori.adventure.identity.Identified;
 import net.kyori.adventure.identity.Identity;
-import org.apache.commons.lang.Validate;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -74,8 +77,7 @@ public class McMMOPlayer implements Identified {
     private final @NotNull Identity identity;
 
     //Hacky fix for now, redesign later
-    private final @NotNull PartyAuthor partyAuthor;
-    private final @NotNull AdminAuthor adminAuthor;
+    private final @NotNull PlayerAuthor playerAuthor;
 
     private final Player        player;
     private final PlayerProfile profile;
@@ -158,8 +160,7 @@ public class McMMOPlayer implements Identified {
         debugMode = false; //Debug mode helps solve support issues, players can toggle it on or off
         attackStrength = 1.0D;
 
-        this.adminAuthor = new AdminAuthor(player);
-        this.partyAuthor = new PartyAuthor(player);
+        this.playerAuthor = new PlayerAuthor(player);
 
         this.chatChannel = ChatChannel.NONE;
 
@@ -176,9 +177,9 @@ public class McMMOPlayer implements Identified {
         return attackStrength;
     }
 
-    public void setAttackStrength(double attackStrength) {
-        this.attackStrength = attackStrength;
-    }
+//    public void setAttackStrength(double attackStrength) {
+//        this.attackStrength = attackStrength;
+//    }
 
     /*public void hideXpBar(PrimarySkillType primarySkillType)
     {
@@ -545,9 +546,7 @@ public class McMMOPlayer implements Identified {
      * @param xp Experience amount to process
      */
     public void beginXpGain(PrimarySkillType skill, float xp, XPGainReason xpGainReason, XPGainSource xpGainSource) {
-        Validate.isTrue(xp >= 0.0, "XP gained should be greater than or equal to zero.");
-
-        if (xp <= 0.0) {
+        if(xp <= 0) {
             return;
         }
 
@@ -604,6 +603,10 @@ public class McMMOPlayer implements Identified {
             return;
         }
 
+        final McMMOPlayerPreXpGainEvent mcMMOPlayerPreXpGainEvent = new McMMOPlayerPreXpGainEvent(player, primarySkillType, xp, xpGainReason);
+        Bukkit.getPluginManager().callEvent(mcMMOPlayerPreXpGainEvent);
+        xp = mcMMOPlayerPreXpGainEvent.getXpGained();
+
         if (primarySkillType.isChildSkill()) {
             Set<PrimarySkillType> parentSkills = FamilyTree.getParents(primarySkillType);
 
@@ -649,7 +652,7 @@ public class McMMOPlayer implements Identified {
             levelsGained++;
         }
 
-        if (EventUtils.tryLevelChangeEvent(player, primarySkillType, levelsGained, xpRemoved, true, xpGainReason)) {
+        if (EventUtils.tryLevelChangeEvent(this, primarySkillType, levelsGained, xpRemoved, true, xpGainReason)) {
             return;
         }
 
@@ -921,20 +924,78 @@ public class McMMOPlayer implements Identified {
             if (skill != PrimarySkillType.WOODCUTTING && skill != PrimarySkillType.AXES) {
                 int timeRemaining = calculateTimeRemaining(ability);
 
-                if (!getAbilityMode(ability) && timeRemaining > 0) {
+                if (isAbilityOnCooldown(ability)) {
                     NotificationManager.sendPlayerInformation(player, NotificationType.ABILITY_COOLDOWN, "Skills.TooTired", String.valueOf(timeRemaining));
                     return;
                 }
             }
 
             if (Config.getInstance().getAbilityMessagesEnabled()) {
-                NotificationManager.sendPlayerInformation(player, NotificationType.TOOL, tool.getRaiseTool());
+                /*
+                 *
+                 * IF THE TOOL IS AN AXE
+                 *
+                 */
+                if(tool == ToolType.AXE) {
+                    processAxeToolMessages();
+                } else {
+                    NotificationManager.sendPlayerInformation(player, NotificationType.TOOL, tool.getRaiseTool());
+                }
+
+                //Send Sound
                 SoundManager.sendSound(player, player.getLocation(), SoundType.TOOL_READY);
             }
 
             setToolPreparationMode(tool, true);
             new ToolLowerTask(this, tool).runTaskLater(mcMMO.p, 4 * Misc.TICK_CONVERSION_FACTOR);
         }
+    }
+
+    public void processAxeToolMessages() {
+        Block rayCast = player.getTargetBlock(null, 100);
+
+        /*
+         * IF BOTH TREE FELLER & SKULL SPLITTER ARE ON CD
+         */
+        if(isAbilityOnCooldown(SuperAbilityType.TREE_FELLER) && isAbilityOnCooldown(SuperAbilityType.SKULL_SPLITTER)) {
+            tooTiredMultiple(PrimarySkillType.WOODCUTTING, SubSkillType.WOODCUTTING_TREE_FELLER, SuperAbilityType.TREE_FELLER, SubSkillType.AXES_SKULL_SPLITTER, SuperAbilityType.SKULL_SPLITTER);
+        /*
+         * IF TREE FELLER IS ON CD
+         * AND PLAYER IS LOOKING AT TREE
+         */
+        } else if(isAbilityOnCooldown(SuperAbilityType.TREE_FELLER)
+                && BlockUtils.isPartOfTree(rayCast)) {
+            raiseToolWithCooldowns(SubSkillType.WOODCUTTING_TREE_FELLER, SuperAbilityType.TREE_FELLER);
+
+        /*
+         * IF SKULL SPLITTER IS ON CD
+         */
+        } else if(isAbilityOnCooldown(SuperAbilityType.SKULL_SPLITTER)) {
+            raiseToolWithCooldowns(SubSkillType.AXES_SKULL_SPLITTER, SuperAbilityType.SKULL_SPLITTER);
+        } else {
+            NotificationManager.sendPlayerInformation(player, NotificationType.TOOL, ToolType.AXE.getRaiseTool());
+        }
+    }
+
+    private void tooTiredMultiple(PrimarySkillType primarySkillType, SubSkillType aSubSkill, SuperAbilityType aSuperAbility, SubSkillType bSubSkill, SuperAbilityType bSuperAbility) {
+        String aSuperAbilityCD = LocaleLoader.getString("Skills.TooTired.Named", aSubSkill.getLocaleName(), String.valueOf(calculateTimeRemaining(aSuperAbility)));
+        String bSuperAbilityCD = LocaleLoader.getString("Skills.TooTired.Named", bSubSkill.getLocaleName(), String.valueOf(calculateTimeRemaining(bSuperAbility)));
+        String allCDStr = aSuperAbilityCD + ", " + bSuperAbilityCD;
+
+        NotificationManager.sendPlayerInformation(player, NotificationType.TOOL, "Skills.TooTired.Extra",
+                primarySkillType.getName(),
+                allCDStr);
+    }
+
+    private void raiseToolWithCooldowns(SubSkillType subSkillType, SuperAbilityType superAbilityType) {
+        NotificationManager.sendPlayerInformation(player, NotificationType.TOOL,
+                "Axes.Ability.Ready.Extra",
+                subSkillType.getLocaleName(),
+                String.valueOf(calculateTimeRemaining(superAbilityType)));
+    }
+
+    public boolean isAbilityOnCooldown(SuperAbilityType ability) {
+        return !getAbilityMode(ability) && calculateTimeRemaining(ability) > 0;
     }
 
     /**
@@ -1049,22 +1110,25 @@ public class McMMOPlayer implements Identified {
         return identity;
     }
 
-    //TODO: Replace this hacky crap
-    public @NotNull PartyAuthor getPartyAuthor() {
-        return partyAuthor;
-    }
 
-    //TODO: Replace this hacky crap
-    public @NotNull AdminAuthor getAdminAuthor() {
-        return adminAuthor;
+    /**
+     * The {@link com.gmail.nossr50.chat.author.Author} for this player, used by mcMMO chat
+     * @return the {@link com.gmail.nossr50.chat.author.Author} for this player
+     */
+    public @NotNull PlayerAuthor getPlayerAuthor() {
+        return playerAuthor;
     }
 
     public @NotNull ChatChannel getChatChannel() {
         return chatChannel;
     }
 
-    public void setChatMode(ChatChannel chatChannel) {
-        //TODO: Code in the "you turned off blah, you turned on blah" messages.
+    /**
+     * Change the chat channel for a player
+     * This does not inform the player
+     * @param chatChannel new chat channel
+     */
+    public void setChatMode(@NotNull ChatChannel chatChannel) {
         this.chatChannel = chatChannel;
     }
 }

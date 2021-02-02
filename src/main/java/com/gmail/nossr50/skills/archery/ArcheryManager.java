@@ -55,10 +55,13 @@ public class ArcheryManager extends SkillManager {
     public double distanceXpBonusMultiplier(LivingEntity target, Entity arrow) {
         //Hacky Fix - some plugins spawn arrows and assign them to players after the ProjectileLaunchEvent fires
         if(!arrow.hasMetadata(mcMMO.arrowDistanceKey))
-            return arrow.getLocation().distance(target.getLocation());
+            return 1;
 
         Location firedLocation = (Location) arrow.getMetadata(mcMMO.arrowDistanceKey).get(0).value();
         Location targetLocation = target.getLocation();
+
+        if(firedLocation == null || firedLocation.getWorld() == null)
+            return 1;
 
         if (firedLocation.getWorld() != targetLocation.getWorld()) {
             return 1;
@@ -100,7 +103,7 @@ public class ArcheryManager extends SkillManager {
             NotificationManager.sendPlayerInformation(defender, NotificationType.SUBSKILL_MESSAGE, "Combat.TouchedFuzzy");
         }
 
-        if (mcMMOPlayer.useChatNotifications()) {
+        if (mmoPlayer.useChatNotifications()) {
             NotificationManager.sendPlayerInformation(getPlayer(), NotificationType.SUBSKILL_MESSAGE, "Combat.TargetDazed");
         }
 

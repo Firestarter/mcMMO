@@ -1,5 +1,6 @@
 package com.gmail.nossr50.skills.salvage;
 
+import com.gmail.nossr50.api.ItemSpawnReason;
 import com.gmail.nossr50.config.AdvancedConfig;
 import com.gmail.nossr50.config.Config;
 import com.gmail.nossr50.config.experience.ExperienceConfig;
@@ -14,7 +15,6 @@ import com.gmail.nossr50.skills.salvage.salvageables.Salvageable;
 import com.gmail.nossr50.util.EventUtils;
 import com.gmail.nossr50.util.Misc;
 import com.gmail.nossr50.util.Permissions;
-import com.gmail.nossr50.util.StringUtils;
 import com.gmail.nossr50.util.player.NotificationManager;
 import com.gmail.nossr50.util.random.RandomChanceSkillStatic;
 import com.gmail.nossr50.util.random.RandomChanceUtil;
@@ -22,6 +22,7 @@ import com.gmail.nossr50.util.skills.RankUtils;
 import com.gmail.nossr50.util.skills.SkillUtils;
 import com.gmail.nossr50.util.sounds.SoundManager;
 import com.gmail.nossr50.util.sounds.SoundType;
+import com.gmail.nossr50.util.text.StringUtils;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -90,7 +91,9 @@ public class SalvageManager extends SkillManager {
 
         // Level check
         if (getSkillLevel() < minimumSalvageableLevel) {
-            NotificationManager.sendPlayerInformation(player, NotificationType.REQUIREMENTS_NOT_MET, "Salvage.Skills.Adept.Level", String.valueOf(salvageable.getMinimumLevel()), StringUtils.getPrettyItemString(item.getType()));
+            NotificationManager.sendPlayerInformation(player, NotificationType.REQUIREMENTS_NOT_MET,
+                    "Salvage.Skills.Adept.Level",
+                    String.valueOf(minimumSalvageableLevel), StringUtils.getPrettyItemString(item.getType()));
             return;
         }
 
@@ -159,10 +162,10 @@ public class SalvageManager extends SkillManager {
         anvilLoc.add(0, .1, 0);
 
         if (enchantBook != null) {
-            Misc.spawnItemTowardsLocation(anvilLoc.clone(), playerLoc.clone(), enchantBook, vectorSpeed);
+            Misc.spawnItemTowardsLocation(anvilLoc.clone(), playerLoc.clone(), enchantBook, vectorSpeed, ItemSpawnReason.SALVAGE_ENCHANTMENT_BOOK);
         }
 
-        Misc.spawnItemTowardsLocation(anvilLoc.clone(), playerLoc.clone(), salvageResults, vectorSpeed);
+        Misc.spawnItemTowardsLocation(anvilLoc.clone(), playerLoc.clone(), salvageResults, vectorSpeed, ItemSpawnReason.SALVAGE_MATERIALS);
 
         // BWONG BWONG BWONG - CLUNK!
         if (Config.getInstance().getSalvageAnvilUseSoundsEnabled()) {

@@ -3,6 +3,7 @@ package com.gmail.nossr50.commands.chat;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.BukkitCommandIssuer;
 import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Conditions;
 import co.aikar.commands.annotation.Default;
 import com.gmail.nossr50.commands.CommandManager;
@@ -11,12 +12,13 @@ import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.party.PartyManager;
-import com.gmail.nossr50.util.StringUtils;
 import com.gmail.nossr50.util.player.UserManager;
+import com.gmail.nossr50.util.text.StringUtils;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-@CommandAlias("p|partychat|pchat") //Kept for historical reasons
+@CommandPermission("mcmmo.chat.partychat")
+@CommandAlias("pc|p|partychat|pchat") //Kept for historical reasons
 public class PartyChatCommand extends BaseCommand {
     private final @NotNull mcMMO pluginRef;
 
